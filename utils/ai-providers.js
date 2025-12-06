@@ -340,6 +340,15 @@ async function tryVoiceAPIs(systemPrompt, media) {
         // Send to AssemblyAI
         transcription = await transcribeWithAssemblyAI(audioBuffer);
         console.log('🎤 [VOICE] AssemblyAI transcription:', transcription);
+
+        // Check if transcription is empty or unclear
+        if (!transcription || transcription.trim() === '' || transcription.trim().length < 3) {
+            console.log('⚠️ [VOICE] Empty or unclear transcription');
+            return {
+                text: "Sorry, aapki awaaz saaf nahi aayi. Please dobara clearly bolein.",
+                audioBuffer: null
+            };
+        }
     } catch (e) {
         console.error('❌ [VOICE] AssemblyAI failed:', e.message);
 
@@ -347,13 +356,18 @@ async function tryVoiceAPIs(systemPrompt, media) {
         try {
             const voicePrompt = `${systemPrompt}
    
-**The user has sent a voice message. Please listen to the transcription and respond directly.**
+**The user has sent a voice message.
 
 Your goal is to provide a friendly, helpful, and concise response to the user's voice message content.
 
-**CRITICAL LANGUAGE & EMOJI RULES:**
-1.  **Language Auto-Detection:** If the detected language of the transcription is **Urdu**, reply **only** in **Urdu Script (ا ب پ...)**. If the language is **English** or any other language, reply **only** in **English**.
-2.  **No Emojis:** Do not use any emojis in your reply.
+
+Respond directly and helpfully.
+
+**LANGUAGE RULES:**
+1. If Urdu/Hindi detected → Reply in **Roman Urdu** (like "Mai theek hoon, aap kaise hain?")
+2. If English detected → Reply in **English**
+3. NO emojis
+4. Keep SHORT (2-3 sentences)
 `;
 
             // Format:
@@ -382,19 +396,26 @@ Your goal is to provide a friendly, helpful, and concise response to the user's 
 
     // Step 2: Send transcribed text to Claude/Grok/Gemini (use General routing)
     const voiceContext = `
-    **The user has sent a voice message.   "${transcription}"
-    Please listen to the transcription and respond directly.**
+**User's voice message:** "${transcription}"
 
-Your goal is to provide a friendly, helpful, and concise response to the user's voice message content.
+Respond directly and helpfully and concise.
 
-**CRITICAL LANGUAGE & EMOJI RULES:**
-1.  **Language Auto-Detection:** If the detected language of the transcription is **Urdu**, reply **only** in **Urdu Language.**. If the language is **English**, reply **only** in **English**.
-2.  **No Emojis:** Do not use any emojis in your reply.
+**LANGUAGE RULES:**
+1. If Urdu/Hindi detected → Reply in **Roman Urdu** (like "Mai theek hoon, aap kaise hain?")
+2. If English detected → Reply in **English**
+3. NO emojis
+4. Keep SHORT (2-3 sentences)
 `;
 
     // Use the general routing (Claude → Grok → Gemini)
+    console.log('📝 [VOICE] Transcription:', transcription);
+
     replyText = await tryGeneralAPIs(systemPrompt, voiceContext);
-    console.log('🎤 [VOICE] Response via text API ✓');
+
+    console.log('🎤 [VOICE] AI Response:');
+    console.log('═'.repeat(50));
+    console.log(replyText);
+    console.log('═'.repeat(50));
 
     // Step 3: Convert reply to audio using AWS Polly
     const replyAudio = await textToSpeech(replyText);
