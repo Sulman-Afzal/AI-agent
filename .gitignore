@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# WhatsApp session data (sensitive)
+.wwebjs_auth/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment variables (API keys, secrets)
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Build output
+dist/
+build/
+
+# Misc
+*.bak
+*.tmp
