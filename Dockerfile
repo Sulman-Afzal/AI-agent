@@ -63,7 +63,7 @@ RUN npm install --only=production
 COPY . .
 
 # Create a non-root user and switch to it
-RUN useradd --system --uid 1000 --gid 0 -m -d /home/appuser -s /bin/bash appuser && \
+RUN useradd --system --uid 1001 --gid 0 -m -d /home/appuser -s /bin/bash appuser && \
     chown -R 1000:0 /app
 
 # Switch to the non-root user
