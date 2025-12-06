@@ -17,6 +17,9 @@ module.exports = {
     GEMINI_API_KEYS: [process.env.GEMINI_API_KEY],
 
     // Grok API Keys (xAI)
-    GROK_API_KEYS: [process.env.GROK_API_KEY]
+    GROK_API_KEYS: [process.env.GROK_API_KEY],
+
+    // AssemblyAI API Key (Speech-to-Text)
+    ASSEMBLYAI_API_KEY: process.env.ASSEMBLYAI_API_KEY
 
 };

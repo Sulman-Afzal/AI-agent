@@ -95,7 +95,7 @@ const CONFIG = {
 ${personalData}
 ========================================================`,
 
-    MAX_RESPONSE_LENGTH: 500,
+    MAX_RESPONSE_LENGTH: 2500,
     ALLOWED_NUMBERS: []
 };
 
