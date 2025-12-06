@@ -18,8 +18,7 @@ Sulman Bhai is waqt available nahi hain. Main unka AI assistant hoon.
 Batayein kaise help karun?
 
 📌 *Quick Commands:*
-• _"clear"_ - Naya conversation shuru karo
-• Voice message bhi bhej sakte ho 🎤`,
+• _"clear"_ - Naya conversation shuru karo`,
 
     // AI response ke start mein
     AI_PREFIX: "_AI Assistant_\n\n",
