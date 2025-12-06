@@ -1,0 +1,84 @@
+==============================================
+         SULMAN BHAI - PERSONAL INFORMATION
+==============================================
+
+[Ye file edit karo apni information ke saath]
+
+----------------------------------------------
+BASIC INFO
+----------------------------------------------
+Name: Sulman
+Full Name: [Apna full name]
+Age: [Age]
+Location: [City, Country]
+Phone: [Phone number - optional]
+Email: [Email address]
+
+----------------------------------------------
+PROFESSION / WORK
+----------------------------------------------
+Current Job/Role: [Job title]
+Company/Business: [Company name]
+Experience: [X years]
+Skills: [Skill 1, Skill 2, Skill 3]
+
+----------------------------------------------
+EDUCATION
+----------------------------------------------
+Degree: [Degree name]
+University/College: [Institution name]
+Graduation Year: [Year]
+
+----------------------------------------------
+SERVICES (Agar services offer karte ho)
+----------------------------------------------
+1. [Service 1] - [Price/Details]
+2. [Service 2] - [Price/Details]
+3. [Service 3] - [Price/Details]
+
+----------------------------------------------
+BUSINESS HOURS
+----------------------------------------------
+Available: [e.g., Monday-Friday, 9 AM - 6 PM]
+Response Time: [e.g., Within 24 hours]
+
+----------------------------------------------
+SOCIAL LINKS
+----------------------------------------------
+LinkedIn: [URL]
+Instagram: [URL]
+Facebook: [URL]
+Website: [URL]
+GitHub: [URL]
+
+----------------------------------------------
+ABOUT ME (Short Bio)
+----------------------------------------------
+[Yahan apne baare mein likho - 2-3 paragraphs]
+
+Example:
+Main ek software developer hoon with 5+ years experience.
+Web development aur mobile apps mein specialize karta hoon.
+Client satisfaction meri top priority hai.
+
+----------------------------------------------
+FAQs (Common Questions & Answers)
+----------------------------------------------
+Q: Aap kya services offer karte ho?
+A: [Answer]
+
+Q: Aapka rate kya hai?
+A: [Answer]
+
+Q: Project kitne time mein complete hota hai?
+A: [Answer]
+
+Q: Contact kaise karein?
+A: [Answer]
+
+----------------------------------------------
+EXTRA NOTES
+----------------------------------------------
+[Koi aur information jo bot ko pata honi chahiye]
+
+==============================================
