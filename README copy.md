@@ -196,3 +196,65 @@ Terminal mein `Ctrl + C` dabao.
 ---
 
 *Made with Gemini AI + whatsapp-web.js*
+
+
+how can i live my this project now??
+
+● To keep your bot running 24/7, use PM2 (Process Manager):
+
+Option 1: PM2 (Recommended)
+
+# Install PM2 globally
+npm install -g pm2
+
+# Start your bot
+pm2 start index.js --name "whatsapp-bot"
+
+# Make it auto-start on system reboot
+pm2 startup
+pm2 save
+
+# Useful commands:
+pm2 logs whatsapp-bot    # View logs
+pm2 restart whatsapp-bot # Restart bot
+pm2 stop whatsapp-bot    # Stop bot
+pm2 status               # Check status
+
+Option 2: Screen (Simple)
+
+# Install screen
+sudo apt install screen
+
+# Create new screen session
+screen -S whatsapp-bot
+
+# Run your bot
+node index.js
+
+# Detach: Press Ctrl+A then D
+# Reattach later: screen -r whatsapp-bot
+
+Option 3: Systemd Service (Linux)
+
+Create /etc/systemd/system/whatsapp-bot.service:
+[Unit]
+Description=WhatsApp Bot
+After=network.target
+
+[Service]
+Type=simple
+User=sulman-ali
+WorkingDirectory=/home/sulman-ali/Pictures/claude/bot-git/AI-agent
+ExecStart=/usr/bin/node index.js
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+Then:
+sudo systemctl enable whatsapp-bot
+sudo systemctl start whatsapp-bot
+
+  ---
+Want me to set up PM2 for you?
+
