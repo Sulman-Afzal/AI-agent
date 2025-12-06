@@ -15,7 +15,7 @@ module.exports = {
 
 Sulman Bhai is waqt available nahi hain. Main unka AI assistant hoon.
 
-Batayein kaise help karun? 
+Batayein kaise help karun?
 
 📌 *Quick Commands:*
 • _"clear"_ - Naya conversation shuru karo
