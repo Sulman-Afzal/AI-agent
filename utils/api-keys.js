@@ -13,8 +13,8 @@ module.exports = {
     // OpenAI API Keys (ChatGPT)
     OPENAI_API_KEYS: [process.env.OPENAI_API_KEY],
 
-    // Gemini API Keys (Google)
-    GEMINI_API_KEYS: [process.env.GEMINI_API_KEY],
+    // Gemini API Keys (Google) - supports multiple comma-separated keys
+    GEMINI_API_KEYS: (process.env.GEMINI_API_KEYS || '').split(',').map(k => k.trim()).filter(k => k),
 
     // Grok API Keys (xAI)
     GROK_API_KEYS: [process.env.GROK_API_KEY],

@@ -24,8 +24,21 @@ const grok = new OpenAI({
     baseURL: "https://api.x.ai/v1"
 });
 
-const genAI = new GoogleGenerativeAI(API_KEYS.GEMINI_API_KEYS[0]);
-const geminiModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+// Gemini - Multiple keys with rotation
+let currentGeminiKeyIndex = 0;
+
+function getGeminiModel() {
+    const keys = API_KEYS.GEMINI_API_KEYS;
+    if (keys.length === 0) throw new Error('No Gemini API keys configured');
+    const genAI = new GoogleGenerativeAI(keys[currentGeminiKeyIndex]);
+    return genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+}
+
+function rotateGeminiKey() {
+    const keys = API_KEYS.GEMINI_API_KEYS;
+    currentGeminiKeyIndex = (currentGeminiKeyIndex + 1) % keys.length;
+    console.log(`🔄 [GEMINI] Rotated to key ${currentGeminiKeyIndex + 1}/${keys.length}`);
+}
 
 // ============== CODING DETECTION ==============
 function isCodingQuestion(message) {
@@ -80,10 +93,47 @@ async function callGrokAPI(systemPrompt, userMessage) {
     return response.choices[0].message.content.trim();
 }
 
-// Gemini API
+// Gemini API - tries all keys on failure
 async function callGeminiAPI(prompt) {
-    const result = await geminiModel.generateContent(prompt);
-    return result.response.text().trim();
+    const keys = API_KEYS.GEMINI_API_KEYS;
+    const startIndex = currentGeminiKeyIndex;
+
+    for (let i = 0; i < keys.length; i++) {
+        try {
+            const model = getGeminiModel();
+            const result = await model.generateContent(prompt);
+            return result.response.text().trim();
+        } catch (e) {
+            console.log(`⚠️ [GEMINI] Key ${currentGeminiKeyIndex + 1} failed: ${e.message}`);
+            rotateGeminiKey();
+
+            // If we've tried all keys, throw
+            if ((currentGeminiKeyIndex === startIndex && i > 0) || i === keys.length - 1) {
+                throw new Error('All Gemini keys exhausted');
+            }
+        }
+    }
+}
+
+// Gemini API for multimodal (audio/images) - tries all keys
+async function callGeminiMultimodal(content) {
+    const keys = API_KEYS.GEMINI_API_KEYS;
+    const startIndex = currentGeminiKeyIndex;
+
+    for (let i = 0; i < keys.length; i++) {
+        try {
+            const model = getGeminiModel();
+            const result = await model.generateContent(content);
+            return result.response.text().trim();
+        } catch (e) {
+            console.log(`⚠️ [GEMINI] Key ${currentGeminiKeyIndex + 1} failed: ${e.message}`);
+            rotateGeminiKey();
+
+            if ((currentGeminiKeyIndex === startIndex && i > 0) || i === keys.length - 1) {
+                throw new Error('All Gemini keys exhausted');
+            }
+        }
+    }
 }
 
 // ============== SMART ROUTING FUNCTIONS ==============
@@ -234,7 +284,7 @@ async function tryVoiceAPIs(systemPrompt, media) {
     } catch (e) {
         console.error('❌ [VOICE] AssemblyAI failed:', e.message);
 
-        // Fallback to Gemini for direct audio processing
+        // Fallback to Gemini for direct audio processing (tries all keys)
         try {
             const voicePrompt = `${systemPrompt}
 
@@ -245,7 +295,7 @@ Format:
 "User ne kaha: [summary]"
 [Your response]`;
 
-            const result = await geminiModel.generateContent([
+            const result = await callGeminiMultimodal([
                 { text: voicePrompt },
                 {
                     inlineData: {
@@ -255,7 +305,7 @@ Format:
                 }
             ]);
             console.log('🎤 [VOICE] Gemini (direct audio) ✓');
-            return result.response.text().trim();
+            return result;
         } catch (geminiError) {
             console.error('❌ [VOICE] Gemini also failed:', geminiError.message);
             return "Voice message samajh nahi aaya. Text mein bhejein.";
