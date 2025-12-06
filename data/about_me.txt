@@ -8,11 +8,11 @@
 BASIC INFO
 ----------------------------------------------
 Name: Sulman
-Full Name: [Apna full name]
-Age: [Age]
-Location: [City, Country]
-Phone: [Phone number - optional]
-Email: [Email address]
+Full Name: Muhhammad Sulman Afzal
+Age: 22
+Location: Lahore Pakistan
+Phone: 03094551041
+Email: sulmanafzal.me@gmail.conm
 
 ----------------------------------------------
 PROFESSION / WORK
