@@ -89,11 +89,18 @@ const CONFIG = {
     OWNER_NAME: PROMPTS.OWNER_NAME,
     INTRO_MESSAGE: PROMPTS.INTRO_MESSAGE,
     AI_PREFIX: PROMPTS.AI_PREFIX,
-    SYSTEM_PROMPT: PROMPTS.SYSTEM_PROMPT + `
+
+    // Modular prompts - combined with personal data
+    BASE_PROMPT: PROMPTS.SYSTEM_PROMPT + `
 
 ============ SULMAN KI PERSONAL INFORMATION ============
 ${personalData}
 ========================================================`,
+
+    // Specific prompts for different scenarios
+    TEXT_PROMPT: PROMPTS.TEXT_PROMPT || '',
+    VOICE_PROMPT: PROMPTS.VOICE_PROMPT || '',
+    CODING_PROMPT: PROMPTS.CODING_PROMPT || '',
 
     MAX_RESPONSE_LENGTH: 2500,
     ALLOWED_NUMBERS: []
@@ -155,7 +162,8 @@ async function getVoiceResponse(media, sender) {
 
     try {
         const historyContext = formatHistoryForPrompt(sender);
-        const fullSystemPrompt = CONFIG.SYSTEM_PROMPT + historyContext;
+        // Use BASE_PROMPT + VOICE_PROMPT for voice messages
+        const fullSystemPrompt = CONFIG.BASE_PROMPT + CONFIG.VOICE_PROMPT + historyContext;
 
         const result = await tryVoiceAPIs(fullSystemPrompt, media);
 
@@ -195,9 +203,16 @@ async function getAIResponse(userMessage, sender) {
 
     try {
         const historyContext = formatHistoryForPrompt(sender);
-        const fullSystemPrompt = CONFIG.SYSTEM_PROMPT + historyContext;
-
         const isCoding = isCodingQuestion(userMessage);
+
+        // Use different prompts for coding vs general text
+        let fullSystemPrompt;
+        if (isCoding) {
+            fullSystemPrompt = CONFIG.BASE_PROMPT + CONFIG.CODING_PROMPT + historyContext;
+        } else {
+            fullSystemPrompt = CONFIG.BASE_PROMPT + CONFIG.TEXT_PROMPT + historyContext;
+        }
+
         let reply;
 
         if (isCoding) {

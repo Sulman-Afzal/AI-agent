@@ -285,14 +285,17 @@ async function transcribeWithAssemblyAI(audioBuffer) {
     const { upload_url } = await uploadResponse.json();
     console.log('🎤 [VOICE] AssemblyAI upload complete');
 
-    // Step 2: Request transcription
+    // Step 2: Request transcription with language detection
     const transcriptResponse = await fetch('https://api.assemblyai.com/v2/transcript', {
         method: 'POST',
         headers: {
             'authorization': assemblyAIKey,
             'content-type': 'application/json'
         },
-        body: JSON.stringify({ audio_url: upload_url })
+        body: JSON.stringify({
+            audio_url: upload_url,
+            language_detection: true  // Auto-detect language (English, Urdu, Hindi, etc.)
+        })
     });
 
     if (!transcriptResponse.ok) {
@@ -343,13 +346,19 @@ async function tryVoiceAPIs(systemPrompt, media) {
         // Fallback to Gemini for direct audio processing (tries all keys)
         try {
             const voicePrompt = `${systemPrompt}
+   
+**The user has sent a voice message. Please listen to the transcription and respond directly.**
 
-User ne voice message bheja hai. Isko suno aur respond karo.
-Pehle briefly batao user ne kya kaha (1 line), phir jawab do.
+Your goal is to provide a friendly, helpful, and concise response to the user's voice message content.
 
-Format:
-"User ne kaha: [summary]"
-[Your response]`;
+**CRITICAL LANGUAGE & EMOJI RULES:**
+1.  **Language Auto-Detection:** If the detected language of the transcription is **Urdu**, reply **only** in **Urdu Script (ا ب پ...)**. If the language is **English** or any other language, reply **only** in **English**.
+2.  **No Emojis:** Do not use any emojis in your reply.
+`;
+
+            // Format:
+            //     "User ne kaha: [summary]"
+            //         [Your response]
 
             replyText = await callGeminiMultimodal([
                 { text: voicePrompt },
@@ -372,11 +381,16 @@ Format:
     }
 
     // Step 2: Send transcribed text to Claude/Grok/Gemini (use General routing)
-    const voiceContext = `User ne voice message bheja: "${transcription}"
+    const voiceContext = `
+    **The user has sent a voice message.   "${transcription}"
+    Please listen to the transcription and respond directly.**
 
-Is message ka jawab do. Reply format:
-"User ne kaha: ${transcription}"
-[Your response]`;
+Your goal is to provide a friendly, helpful, and concise response to the user's voice message content.
+
+**CRITICAL LANGUAGE & EMOJI RULES:**
+1.  **Language Auto-Detection:** If the detected language of the transcription is **Urdu**, reply **only** in **Urdu Language.**. If the language is **English**, reply **only** in **English**.
+2.  **No Emojis:** Do not use any emojis in your reply.
+`;
 
     // Use the general routing (Claude → Grok → Gemini)
     replyText = await tryGeneralAPIs(systemPrompt, voiceContext);
