@@ -5,6 +5,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Anthropic = require('@anthropic-ai/sdk');
 const OpenAI = require('openai');
+const { PollyClient, SynthesizeSpeechCommand } = require('@aws-sdk/client-polly');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -23,6 +24,21 @@ const grok = new OpenAI({
     apiKey: API_KEYS.GROK_API_KEYS[0],
     baseURL: "https://api.x.ai/v1"
 });
+
+// AWS Polly Client (for Text-to-Speech)
+let pollyClient = null;
+function getPollyClient() {
+    if (!pollyClient && API_KEYS.AWS_ACCESS_KEY_ID && API_KEYS.AWS_SECRET_ACCESS_KEY) {
+        pollyClient = new PollyClient({
+            region: API_KEYS.AWS_REGION,
+            credentials: {
+                accessKeyId: API_KEYS.AWS_ACCESS_KEY_ID,
+                secretAccessKey: API_KEYS.AWS_SECRET_ACCESS_KEY
+            }
+        });
+    }
+    return pollyClient;
+}
 
 // Gemini - Multiple keys with rotation
 let currentGeminiKeyIndex = 0;
@@ -133,6 +149,43 @@ async function callGeminiMultimodal(content) {
                 throw new Error('All Gemini keys exhausted');
             }
         }
+    }
+}
+
+// ============== TEXT-TO-SPEECH (AWS Polly) ==============
+async function textToSpeech(text) {
+    const client = getPollyClient();
+    if (!client) {
+        console.log('⚠️ [TTS] AWS Polly not configured');
+        return null;
+    }
+
+    try {
+        // Limit text length for Polly (max 3000 chars for standard voices)
+        const truncatedText = text.length > 2500 ? text.substring(0, 2500) + '...' : text;
+
+        const command = new SynthesizeSpeechCommand({
+            Text: truncatedText,
+            OutputFormat: 'mp3',         // MP3 format for WhatsApp compatibility
+            VoiceId: 'Kajal',           // Hindi/Urdu female voice
+            Engine: 'neural',           // Neural engine for better quality
+            LanguageCode: 'hi-IN'       // Hindi language
+        });
+
+        const response = await client.send(command);
+
+        // Convert stream to buffer
+        const chunks = [];
+        for await (const chunk of response.AudioStream) {
+            chunks.push(chunk);
+        }
+        const audioBuffer = Buffer.concat(chunks);
+
+        console.log('🔊 [TTS] AWS Polly audio generated:', audioBuffer.length, 'bytes');
+        return audioBuffer;
+    } catch (e) {
+        console.error('❌ [TTS] AWS Polly failed:', e.message);
+        return null;
     }
 }
 
@@ -270,10 +323,13 @@ async function transcribeWithAssemblyAI(audioBuffer) {
     throw new Error('Transcription timeout');
 }
 
-// VOICE: Speech-to-Text (AssemblyAI) → Claude/Grok/Gemini
+// VOICE: Speech-to-Text (AssemblyAI) → AI Response → Text-to-Speech (AWS Polly)
+// Returns: { text: string, audioBuffer: Buffer|null }
 async function tryVoiceAPIs(systemPrompt, media) {
     // Step 1: Convert voice to text using AssemblyAI
     let transcription;
+    let replyText;
+
     try {
         // Convert base64 to buffer
         const audioBuffer = Buffer.from(media.data, 'base64');
@@ -295,7 +351,7 @@ Format:
 "User ne kaha: [summary]"
 [Your response]`;
 
-            const result = await callGeminiMultimodal([
+            replyText = await callGeminiMultimodal([
                 { text: voicePrompt },
                 {
                     inlineData: {
@@ -305,10 +361,13 @@ Format:
                 }
             ]);
             console.log('🎤 [VOICE] Gemini (direct audio) ✓');
-            return result;
+
+            // Convert reply to audio
+            const replyAudio = await textToSpeech(replyText);
+            return { text: replyText, audioBuffer: replyAudio };
         } catch (geminiError) {
             console.error('❌ [VOICE] Gemini also failed:', geminiError.message);
-            return "Voice message samajh nahi aaya. Text mein bhejein.";
+            return { text: "Voice message samajh nahi aaya. Text mein bhejein.", audioBuffer: null };
         }
     }
 
@@ -320,9 +379,13 @@ Is message ka jawab do. Reply format:
 [Your response]`;
 
     // Use the general routing (Claude → Grok → Gemini)
-    const reply = await tryGeneralAPIs(systemPrompt, voiceContext);
+    replyText = await tryGeneralAPIs(systemPrompt, voiceContext);
     console.log('🎤 [VOICE] Response via text API ✓');
-    return reply;
+
+    // Step 3: Convert reply to audio using AWS Polly
+    const replyAudio = await textToSpeech(replyText);
+
+    return { text: replyText, audioBuffer: replyAudio };
 }
 
 // ============== EXPORTS ==============

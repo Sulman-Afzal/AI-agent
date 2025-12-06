@@ -20,6 +20,11 @@ module.exports = {
     GROK_API_KEYS: [process.env.GROK_API_KEY],
 
     // AssemblyAI API Key (Speech-to-Text)
-    ASSEMBLYAI_API_KEY: process.env.ASSEMBLYAI_API_KEY
+    ASSEMBLYAI_API_KEY: process.env.ASSEMBLYAI_API_KEY,
+
+    // AWS Credentials (for Polly TTS)
+    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+    AWS_REGION: process.env.AWS_REGION || 'us-east-1'
 
 };

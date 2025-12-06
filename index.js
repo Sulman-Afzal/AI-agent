@@ -1,4 +1,4 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const path = require('path');
@@ -147,6 +147,7 @@ function formatHistoryForPrompt(sender) {
 }
 
 // ============== VOICE MESSAGE HANDLER ==============
+// Returns: { text: string, audioBuffer: Buffer|null }
 async function getVoiceResponse(media, sender) {
     if (CONFIG.ALLOWED_NUMBERS.length > 0 && !CONFIG.ALLOWED_NUMBERS.includes(sender)) {
         return null;
@@ -156,19 +157,26 @@ async function getVoiceResponse(media, sender) {
         const historyContext = formatHistoryForPrompt(sender);
         const fullSystemPrompt = CONFIG.SYSTEM_PROMPT + historyContext;
 
-        let reply = await tryVoiceAPIs(fullSystemPrompt, media);
+        const result = await tryVoiceAPIs(fullSystemPrompt, media);
 
-        if (reply.length > CONFIG.MAX_RESPONSE_LENGTH) {
-            reply = reply.substring(0, CONFIG.MAX_RESPONSE_LENGTH) + "...";
+        let replyText = result.text;
+        if (replyText.length > CONFIG.MAX_RESPONSE_LENGTH) {
+            replyText = replyText.substring(0, CONFIG.MAX_RESPONSE_LENGTH) + "...";
         }
 
         addToHistory(sender, 'User', '[Voice Message]');
-        addToHistory(sender, 'Assistant', reply);
+        addToHistory(sender, 'Assistant', replyText);
 
-        return CONFIG.AI_PREFIX + "🎤 " + reply;
+        return {
+            text: CONFIG.AI_PREFIX + "🎤 " + replyText,
+            audioBuffer: result.audioBuffer
+        };
     } catch (error) {
         console.error('Voice AI Error:', error.message);
-        return CONFIG.AI_PREFIX + "Sorry, voice message samajh nahi aaya. Text mein bhejein.";
+        return {
+            text: CONFIG.AI_PREFIX + "Sorry, voice message samajh nahi aaya. Text mein bhejein.",
+            audioBuffer: null
+        };
     }
 }
 
@@ -327,26 +335,50 @@ client.on('message', async (message) => {
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
-        let aiResponse;
-
         if (message.hasMedia && message.type === 'ptt') {
+            // Handle voice message - reply with voice
             console.log(`\n🎤 Voice message from ${sender}`);
             const media = await message.downloadMedia();
 
             if (media) {
-                aiResponse = await getVoiceResponse(media, sender);
+                const voiceResult = await getVoiceResponse(media, sender);
+
+                if (voiceResult) {
+                    // Try to send voice reply first
+                    if (voiceResult.audioBuffer) {
+                        try {
+                            const voiceMedia = new MessageMedia(
+                                'audio/mpeg',
+                                voiceResult.audioBuffer.toString('base64'),
+                                'voice_reply.mp3'
+                            );
+                            // Send as audio file (plays in WhatsApp music player)
+                            await message.reply(voiceMedia);
+                            console.log(`✅ Voice reply sent`);
+                        } catch (voiceError) {
+                            console.error('❌ Voice send failed, falling back to text:', voiceError.message);
+                            await message.reply(voiceResult.text);
+                            console.log(`✅ Text reply sent (voice fallback)`);
+                        }
+                    } else {
+                        // No audio available, send text
+                        await message.reply(voiceResult.text);
+                        console.log(`✅ Text reply sent (no audio)`);
+                    }
+                }
             } else {
-                aiResponse = CONFIG.AI_PREFIX + "Voice message download nahi ho saka. Dobara bhejein.";
+                await message.reply(CONFIG.AI_PREFIX + "Voice message download nahi ho saka. Dobara bhejein.");
             }
         } else {
+            // Handle text message - reply with text
             const userMessage = message.body;
             console.log(`\n📩 Message from ${sender}: ${userMessage}`);
-            aiResponse = await getAIResponse(userMessage, sender);
-        }
+            const aiResponse = await getAIResponse(userMessage, sender);
 
-        if (aiResponse) {
-            await message.reply(aiResponse);
-            console.log(`✅ Reply sent: ${aiResponse.substring(0, 50)}...`);
+            if (aiResponse) {
+                await message.reply(aiResponse);
+                console.log(`✅ Reply sent: ${aiResponse.substring(0, 50)}...`);
+            }
         }
     } catch (error) {
         console.error('❌ Error:', error.message);
