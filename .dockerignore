@@ -1,0 +1,20 @@
+# Ignore node_modules, as they will be installed in the container
+node_modules
+
+# Ignore local session data
+.wwebjs_auth
+
+# Ignore Git directory
+.git
+.gitignore
+
+# Ignore local environment files
+.env
+.env.example
+
+# Ignore IDE and OS files
+.idea
+.vscode
+*.local
+*.log
+README copy.md

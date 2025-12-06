@@ -4,18 +4,16 @@ const fs = require('fs');
 const path = require('path');
 const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
+require('dotenv').config();
 
 // ============== LOAD MODULES ==============
 const PROMPTS = require('./prompts.js');
 const { isCodingQuestion, tryCodingAPIs, tryGeneralAPIs, tryVoiceAPIs } = require('./utils/ai-providers.js');
-
 // ============== LOAD ALL DATA FILES ==============
 const DATA_FOLDER = path.join(__dirname, 'data');
 const SUPPORTED_EXTENSIONS = ['.txt', '.pdf', '.doc', '.docx', '.md'];
-
 async function readFileContent(filePath) {
     const ext = path.extname(filePath).toLowerCase();
-
     try {
         if (ext === '.txt' || ext === '.md') {
             return fs.readFileSync(filePath, 'utf8');
@@ -42,17 +40,14 @@ async function readFileContent(filePath) {
         return '';
     }
 }
-
 async function loadAllDataFiles(dir) {
     let allData = '';
     try {
         if (!fs.existsSync(dir)) return '';
-
         const items = fs.readdirSync(dir);
         for (const item of items) {
             const fullPath = path.join(dir, item);
             const stat = fs.statSync(fullPath);
-
             if (stat.isDirectory()) {
                 allData += await loadAllDataFiles(fullPath);
             } else {
@@ -71,18 +66,16 @@ async function loadAllDataFiles(dir) {
     }
     return allData;
 }
-
 // Load data (async IIFE)
 let personalData = '';
 (async () => {
     personalData = await loadAllDataFiles(DATA_FOLDER);
     console.log('✅ All data files loaded!');
 })();
-
 // ============== CONFIGURATION ==============
 const CONFIG = {
     // YOUR WhatsApp number (for admin commands)
-    ADMIN_NUMBER: "923127212913@c.us",
+    ADMIN_NUMBER: process.env.ADMIN_NUMBER || "923127212913@c.us",
 
     // Values from prompts.js
     BOT_NAME: PROMPTS.BOT_NAME,
