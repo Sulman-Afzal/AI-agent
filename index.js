@@ -2,6 +2,7 @@ const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const path = require('path');
+const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
 require('dotenv').config();
 
@@ -16,6 +17,11 @@ async function readFileContent(filePath) {
     try {
         if (ext === '.txt' || ext === '.md') {
             return fs.readFileSync(filePath, 'utf8');
+        }
+        if (ext === '.pdf') {
+            const dataBuffer = fs.readFileSync(filePath);
+            const pdfData = await pdf(dataBuffer);
+            return pdfData.text;
         }
         if (ext === '.docx') {
             const result = await mammoth.extractRawText({ path: filePath });
