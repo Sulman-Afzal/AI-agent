@@ -372,17 +372,14 @@ async function tryVoiceAPIs(systemPrompt, media) {
             const voicePrompt = `${systemPrompt}
    
 **The user has sent a voice message.
-
-Your goal is to provide a friendly, helpful, and concise response to the user's voice message content.
-
-
-Respond directly and helpfully.
+Respond directly and to the point.
 
 **LANGUAGE RULES:**
 1. If Urdu/Hindi detected → Reply in **Roman Urdu** (like "Mai theek hoon, aap kaise hain?")
 2. If English detected → Reply in **English**
 3. NO emojis
 4. Keep SHORT (2-3 sentences)
+5. replace "main" to "mai" for voice message reply in roman urdu.
 `;
 
             // Format:
@@ -413,7 +410,7 @@ Respond directly and helpfully.
     const voiceContext = `
 **User's voice message:** "${transcription}"
 
-Respond directly and helpfully and concise.
+Respond directly and concise.
 
 **LANGUAGE RULES:**
 1. If Urdu/Hindi detected → Reply in **Roman Urdu** (like "Mai theek hoon, aap kaise hain?")

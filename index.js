@@ -229,6 +229,17 @@ async function getAIResponse(userMessage, sender) {
 }
 
 // ============== WHATSAPP CLIENT ==============
+// puppeteer: {
+//     headless: true,
+//         executablePath: process.platform === 'win32'
+//         ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+//         : (process.env.CHROME_PATH || '/usr/bin/google-chrome'),
+//         args: process.platform === 'linux'
+//         ? ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
+//         : []
+// executablePath: process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+// }
+
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
@@ -319,11 +330,17 @@ client.on('message_create', async (message) => {
 
 // ============== MESSAGE HANDLER ==============
 client.on('message', async (message) => {
+    // Ignore various message types
+    const messageType = message.type.toUpperCase();
     if (message.fromMe ||
         message.from.includes('@g.us') ||
         message.from.includes('@newsletter') ||
         message.from === 'status@broadcast' ||
-        message.isStatus) {
+        message.isStatus ||
+        messageType === 'NOTIFICATION' ||
+        messageType === 'CALL_LOG' ||
+        messageType === 'E2E_NOTIFICATION'
+    ) {
         return;
     }
 
