@@ -329,20 +329,63 @@ client.on('message_create', async (message) => {
 });
 
 // ============== MESSAGE HANDLER ==============
-client.on('message', async (message) => {
-    // Ignore various message types
-    const messageType = message.type.toUpperCase();
-    if (message.fromMe ||
-        message.from.includes('@g.us') ||
-        message.from.includes('@newsletter') ||
-        message.from === 'status@broadcast' ||
-        message.isStatus ||
-        messageType === 'NOTIFICATION' ||
-        messageType === 'CALL_LOG' ||
-        messageType === 'E2E_NOTIFICATION'
-    ) {
-        return;
+// Helper to decide whether to ignore a message (groups, status, newsletters, system/info notes, etc.)
+async function shouldIgnoreMessage(message) {
+    try {
+        const type = (message.type || '').toLowerCase();
+        const from = message.from || '';
+
+        // Basic immediate filters
+        if (message.fromMe) return true;
+        if (message.isStatus) return true; // Status updates
+        if (from === 'status@broadcast') return true; // Status broadcast
+        if (from.includes('@newsletter')) return true; // Channels / newsletters
+        if (from.includes('@g.us')) return true; // Groups by JID suffix
+
+        // Chat object filters (more reliable)
+        try {
+            const chat = await message.getChat();
+            if (chat) {
+                if (chat.isGroup) return true; // Ignore all groups
+                if (chat.isBroadcast) return true; // Broadcast lists
+                if (chat.isReadOnly) return true; // Announcements / communities
+            }
+        } catch (_) { /* ignore chat fetch errors */ }
+
+        // Only allow plain text chats and voice notes (ptt). Everything else ignored.
+        const allowedTypes = new Set(['chat', 'ptt']);
+        if (!allowedTypes.has(type)) return true;
+
+        // For text, ensure there is a non-empty body
+        if (type === 'chat') {
+            const body = (message.body || '').trim();
+            if (!body) return true;
+        }
+
+        // Extra safety: ignore well-known system/info types if surfaced differently
+        const sysTypes = new Set([
+            'notification',
+            'call_log',
+            'e2e_notification',
+            'protocol',
+            'ciphertext',
+            'revoked',
+            'gp2',
+            'sender_key_distribution',
+            'unknown'
+        ]);
+        if (sysTypes.has(type)) return true;
+
+        return false;
+    } catch (e) {
+        // On any error, be safe and ignore
+        return true;
     }
+}
+
+client.on('message', async (message) => {
+    // Short-circuit for ignorable contexts
+    if (await shouldIgnoreMessage(message)) return;
 
     const sender = message.from;
 
@@ -364,7 +407,8 @@ client.on('message', async (message) => {
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
-        if (message.hasMedia && message.type === 'ptt') {
+        const type = (message.type || '').toLowerCase();
+        if (type === 'ptt' && message.hasMedia) {
             // Handle voice message - reply with voice
             console.log(`\n🎤 Voice message from ${sender}`);
             const media = await message.downloadMedia();
@@ -400,7 +444,7 @@ client.on('message', async (message) => {
             }
         } else {
             // Handle text message - reply with text
-            const userMessage = message.body;
+            const userMessage = (message.body || '').trim();
             console.log(`\n📩 Message from ${sender}: ${userMessage}`);
             const aiResponse = await getAIResponse(userMessage, sender);
 
