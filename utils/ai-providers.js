@@ -193,6 +193,18 @@ async function textToSpeech(text) {
 
 // CODING: Claude → ChatGPT → Grok → Gemini (4-tier)
 async function tryCodingAPIs(systemPrompt, userMessage) {
+
+    // 4. Try Gemini
+    try {
+        const prompt = `${systemPrompt}\n\nUser: ${userMessage}\n\nReply:`;
+        const reply = await callGeminiAPI(prompt);
+        console.log('🤖 [CODING] Gemini ✓');
+        return reply;
+    } catch (e) {
+        console.error('❌ [CODING] All APIs failed');
+        return "Sab AI busy hain. Thodi der baad try karein.";
+    }
+
     // 1. Try Claude
     try {
         const reply = await callClaudeAPI(systemPrompt, userMessage);
@@ -220,20 +232,22 @@ async function tryCodingAPIs(systemPrompt, userMessage) {
         console.log('⚠️ [CODING] Grok failed, trying Gemini...');
     }
 
-    // 4. Try Gemini
-    try {
-        const prompt = `${systemPrompt}\n\nUser: ${userMessage}\n\nReply:`;
-        const reply = await callGeminiAPI(prompt);
-        console.log('🤖 [CODING] Gemini ✓');
-        return reply;
-    } catch (e) {
-        console.error('❌ [CODING] All 4 APIs failed');
-        return "Sab AI busy hain. Thodi der baad try karein.";
-    }
 }
 
 // GENERAL: Claude → Grok → Gemini (3-tier)
 async function tryGeneralAPIs(systemPrompt, userMessage) {
+
+    // 3. Try Gemini
+    try {
+        const prompt = `${systemPrompt}\n\nUser: ${userMessage}\n\nReply:`;
+        const reply = await callGeminiAPI(prompt);
+        console.log('🤖 [GENERAL] Gemini ✓');
+        return reply;
+    } catch (e) {
+        console.error('❌ [GENERAL] All 3 APIs failed');
+        return "Sab AI busy hain. Thodi der baad try karein.";
+    }
+
     // 1. Try Claude
     try {
         const reply = await callClaudeAPI(systemPrompt, userMessage);
@@ -250,17 +264,6 @@ async function tryGeneralAPIs(systemPrompt, userMessage) {
         return reply;
     } catch (e) {
         console.log('⚠️ [GENERAL] Grok failed, trying Gemini...');
-    }
-
-    // 3. Try Gemini
-    try {
-        const prompt = `${systemPrompt}\n\nUser: ${userMessage}\n\nReply:`;
-        const reply = await callGeminiAPI(prompt);
-        console.log('🤖 [GENERAL] Gemini ✓');
-        return reply;
-    } catch (e) {
-        console.error('❌ [GENERAL] All 3 APIs failed');
-        return "Sab AI busy hain. Thodi der baad try karein.";
     }
 }
 
