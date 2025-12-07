@@ -231,20 +231,24 @@ async function getAIResponse(userMessage, sender) {
 // ============== WHATSAPP CLIENT ==============
 const client = new Client({
     authStrategy: new LocalAuth(),
-    webVersionCache: {
-        type: 'remote',
-        remotePath: 'https://raw.githubusercontent.com/AriGlenn/wa-version/main/html/2.2412.54.html'
-    },
     puppeteer: {
         headless: true,
-        executablePath: '/usr/bin/google-chrome',
+        executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
     }
+});
+
+// Debug events
+client.on('loading_screen', (percent, message) => {
+    console.log('DEBUG: Loading screen', percent, message);
 });
 
 // QR Code Display
 client.on('qr', (qr) => {
     console.log('\n📱 WhatsApp Web se connect karne ke liye QR scan karein:\n');
+    console.log('=== RAW QR CODE STRING (use online QR generator) ===');
+    console.log(qr);
+    console.log('====================================================\n');
     qrcode.generate(qr, { small: true });
 });
 
@@ -397,4 +401,7 @@ client.on('message', async (message) => {
 // Start the client
 console.log('🚀 WhatsApp Bot starting...');
 console.log('⏳ Please wait...\n');
-client.initialize();
+console.log('DEBUG: Calling client.initialize()...');
+client.initialize()
+    .then(() => console.log('DEBUG: client.initialize() completed'))
+    .catch(err => console.error('DEBUG: client.initialize() error:', err));
