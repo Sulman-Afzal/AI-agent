@@ -2,83 +2,88 @@
          SULMAN BHAI - PERSONAL INFORMATION
 ==============================================
 
-[Ye file edit karo apni information ke saath]
+[This file contains professional and personal information about Sulman Afzal.]
 
 ----------------------------------------------
 BASIC INFO
 ----------------------------------------------
-Name: Sulman
-Full Name: Muhhammad Sulman Afzal
+Name: Sulman Afzal
+Full Name: Muhammad Sulman Afzal
+Title: Full-Stack Web Developer & Tech Enthusiast
 Age: 22
-Location: Lahore Pakistan
+Location: Lahore, Pakistan
 Phone: 03094551041
-Email: sulmanafzal.me@gmail.conm
+Email: sulmanafzal.me@gmail.com
 
 ----------------------------------------------
 PROFESSION / WORK
 ----------------------------------------------
-Current Job/Role: Developer
-Company/Business: [Company name]
-Experience: [X years]
-Skills: [Skill 1, Skill 2, Skill 3]
+Current Job/Role: Full-Stack Web Developer
+Company/Business: Freelance & Tech Consultancy
+Experience: 4+ years
+Skills:
+- Frontend: Vue.js, React.js, HTML5, CSS3, JavaScript (ES6+)
+- Backend: Node.js, Express.js, Laravel, Python (Flask, Django)
+- Databases: MySQL, PostgreSQL, MongoDB
+- Others: REST APIs, Git, Docker, UI/UX Principles
 
 ----------------------------------------------
 EDUCATION
 ----------------------------------------------
-Degree: [Degree name]
-University/College: [Institution name]
-Graduation Year: [Year]
+Degree: Bachelor of Science in Computer Science
+University/College: Punjab University College of Information Technology (PUCIT)
+Graduation Year: 2023
 
 ----------------------------------------------
-SERVICES (Agar services offer karte ho)
+SERVICES (Offered with a focus on quality and modern tech)
 ----------------------------------------------
-1. [Service 1] - [Price/Details]
-2. [Service 2] - [Price/Details]
-3. [Service 3] - [Price/Details]
+1. Custom Web Application Development: Building scalable and secure web apps from scratch.
+2. Frontend Development: Creating responsive and interactive user interfaces with React.js or Vue.js.
+3. Backend & API Development: Developing robust server-side logic and RESTful APIs using Node.js or Laravel.
+4. Tech Consultancy: Providing expert advice on technology stacks and software architecture.
 
 ----------------------------------------------
 BUSINESS HOURS
 ----------------------------------------------
-Available: [e.g., Monday-Friday, 9 AM - 6 PM]
-Response Time: [e.g., Within 24 hours]
+Available: Monday - Saturday, 10 AM - 7 PM (PKT)
+Response Time: Usually within a few hours.
 
 ----------------------------------------------
 SOCIAL LINKS
 ----------------------------------------------
-LinkedIn: [URL]
-Instagram: [URL]
+LinkedIn: [https://www.linkedin.com/in/your-profile]
+GitHub: [https://github.com/your-username]
+Website: [https://your-website.com]
 Facebook: [URL]
-Website: [URL]
-GitHub: [URL]
+Instagram: [URL]
+
 
 ----------------------------------------------
 ABOUT ME (Short Bio)
 ----------------------------------------------
-[Yahan apne baare mein likho - 2-3 paragraphs]
+I am Sulman Afzal, a passionate and results-driven Full-Stack Web Developer with a strong foundation in modern web technologies. With over 4 years of hands-on experience, I specialize in crafting elegant, efficient, and scalable web solutions. My expertise spans across the entire development stack, from creating beautiful and responsive frontends with React and Vue.js to architecting robust backends with Node.js and Laravel.
 
-Example:
-Main ek software developer hoon with 5+ years experience.
-Web development aur mobile apps mein specialize karta hoon.
-Client satisfaction meri top priority hai.
+As a dedicated problem-solver, I thrive on technical challenges and am constantly exploring new technologies to stay at the forefront of the industry. I am committed to writing clean, maintainable code and building applications that not only meet client requirements but also provide a seamless user experience. My goal is to leverage my skills to build innovative products that make a real-world impact.
 
 ----------------------------------------------
 FAQs (Common Questions & Answers)
 ----------------------------------------------
 Q: Aap kya services offer karte ho?
-A: [Answer]
+A: I offer a range of web development services, including building complete websites, creating custom frontends (UI/UX), developing backend APIs, and providing technical consultation.
 
 Q: Aapka rate kya hai?
-A: [Answer]
+A: My rates are project-based and depend on the complexity and scope of the work. Please contact me with your requirements for a detailed quote.
 
 Q: Project kitne time mein complete hota hai?
-A: [Answer]
+A: The timeline varies depending on the project. After discussing the requirements, I provide an estimated timeline for completion.
 
 Q: Contact kaise karein?
-A: [Answer]
+A: You can reach out to me via my email at sulmanafzal.me@gmail.com or call me at 03094551041.
 
 ----------------------------------------------
 EXTRA NOTES
 ----------------------------------------------
-[Koi aur information jo bot ko pata honi chahiye]
+- Politically, I am a supporter of Tehreek-e-Labbaik Pakistan (TLP).
+- I have a keen interest in open-source projects and a passion for learning new programming languages and frameworks.
 
 ==============================================
