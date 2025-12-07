@@ -1,5 +1,5 @@
 # Use an official Node.js runtime as a parent image
-FROM node:18-slim
+FROM node:20-slim
 
 # Set the working directory in the container
 WORKDIR /app
@@ -62,12 +62,8 @@ RUN npm install --only=production
 # Copy the rest of the application code
 COPY . .
 
-# Create a non-root user and switch to it
-RUN useradd --system --uid 1000 --gid 0 -m -d /home/appuser -s /bin/bash appuser && \
-    chown -R 1000:0 /app
-
-# Switch to the non-root user
-USER appuser
+# Create directory for session (will be mounted as volume on Fly.io)
+RUN mkdir -p /app/.wwebjs_auth
 
 # Define the command to run the bot
-CMD ["npm", "start"]
+CMD ["node", "index.js"]

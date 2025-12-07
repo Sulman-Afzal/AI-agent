@@ -1,0 +1,23 @@
+# fly.toml app configuration file generated for sulman-whatsapp-bot on 2025-12-07T20:44:52+05:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'sulman-whatsapp-bot'
+primary_region = 'sin'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[env]
+  CHROME_PATH = '/usr/bin/google-chrome'
+  NODE_ENV = 'production'
+
+[[mounts]]
+  source = 'wwebjs_session'
+  destination = '/app/.wwebjs_auth'
+
+[[vm]]
+  memory = '1024mb'
+  cpu_kind = 'shared'
+  cpus = 1
