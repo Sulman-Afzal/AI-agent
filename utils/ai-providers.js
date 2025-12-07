@@ -235,7 +235,7 @@ async function tryCodingAPIs(systemPrompt, userMessage) {
     return "Sab AI busy hain. Thodi der baad try karein.";
 }
 
-// GENERAL: Gemini → Claude → Grok (3-tier)
+// GENERAL: Gemini → OpenAI → Claude → Grok (4-tier)
 async function tryGeneralAPIs(systemPrompt, userMessage) {
 
     // 1. Try Gemini (free, fast)
@@ -245,10 +245,19 @@ async function tryGeneralAPIs(systemPrompt, userMessage) {
         console.log('🤖 [GENERAL] Gemini ✓');
         return reply;
     } catch (e) {
-        console.log('⚠️ [GENERAL] Gemini failed, trying Claude...');
+        console.log('⚠️ [GENERAL] Gemini failed, trying OpenAI...');
     }
 
-    // 2. Try Claude
+    // 2. Try OpenAI (ChatGPT)
+    try {
+        const reply = await callOpenAI(systemPrompt, userMessage);
+        console.log('🤖 [GENERAL] OpenAI ✓');
+        return reply;
+    } catch (e) {
+        console.log('⚠️ [GENERAL] OpenAI failed, trying Claude...');
+    }
+
+    // 3. Try Claude
     try {
         const reply = await callClaudeAPI(systemPrompt, userMessage);
         console.log('🤖 [GENERAL] Claude ✓');
@@ -257,7 +266,7 @@ async function tryGeneralAPIs(systemPrompt, userMessage) {
         console.log('⚠️ [GENERAL] Claude failed, trying Grok...');
     }
 
-    // 3. Try Grok
+    // 4. Try Grok
     try {
         const reply = await callGrokAPI(systemPrompt, userMessage);
         console.log('🤖 [GENERAL] Grok ✓');
@@ -266,7 +275,7 @@ async function tryGeneralAPIs(systemPrompt, userMessage) {
         console.log('⚠️ [GENERAL] Grok failed');
     }
 
-    console.error('❌ [GENERAL] All 3 APIs failed');
+    console.error('❌ [GENERAL] All 4 APIs failed');
     return "Sab AI busy hain. Thodi der baad try karein.";
 }
 

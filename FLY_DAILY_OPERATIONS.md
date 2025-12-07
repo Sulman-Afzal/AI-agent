@@ -378,3 +378,15 @@ fly ssh console
 # Run: pkill -9 chrome; node index.js
 # Scan QR, exit, restart
 ```
+
+
+
+● Deployed! Ab QR scan karna padega (session logout thi). SSH karo:
+
+fly ssh console
+
+Phir:
+pkill -9 chrome; rm -f /app/.wwebjs_auth/session/SingletonLock; node index.js
+
+QR scan karo, phir Ctrl+C aur exit karke machine restart:
+fly machines restart e827491c094268
