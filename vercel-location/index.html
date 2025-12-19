@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share Location</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+        .status.loading {
+            background: #e7f3ff;
+            color: #004085;
+            display: block;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #004085;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">📍</div>
+        <h1>Share Your Location</h1>
+        <p>Tap the button below to share your current location. This helps us serve you better.</p>
+        <button class="btn" id="shareBtn" onclick="getLocation()">
+            Share Location
+        </button>
+        <div class="status" id="status"></div>
+    </div>
+
+    <script>
+        // Backend URL - Fly.io server
+        const BACKEND_URL = 'https://sulman-whatsapp-bot.fly.dev';
+
+        // Get user ID from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('user');
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.className = 'status ' + type;
+            if (type === 'loading') {
+                status.innerHTML = '<span class="spinner"></span>' + message;
+            } else {
+                status.textContent = message;
+            }
+        }
+
+        function getLocation() {
+            const btn = document.getElementById('shareBtn');
+
+            if (!navigator.geolocation) {
+                showStatus('Geolocation is not supported by your browser', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Getting Location...';
+            showStatus('Requesting your location...', 'loading');
+
+            navigator.geolocation.getCurrentPosition(
+                // Success callback
+                async (position) => {
+                    const locationData = {
+                        user: userId,
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    showStatus('Sending location...', 'loading');
+
+                    try {
+                        console.log('Sending to:', BACKEND_URL + '/location');
+                        console.log('Data:', locationData);
+
+                        const response = await fetch(BACKEND_URL + '/location', {
+                            method: 'POST',
+                            mode: 'cors',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify(locationData)
+                        });
+
+                        console.log('Response status:', response.status);
+
+                        if (response.ok) {
+                            const result = await response.json();
+                            console.log('Success:', result);
+                            showStatus('Location shared successfully! You can close this page.', 'success');
+                            btn.textContent = 'Location Shared!';
+                        } else {
+                            const errorText = await response.text();
+                            console.error('Server error:', response.status, errorText);
+                            throw new Error('Server error: ' + response.status);
+                        }
+                    } catch (error) {
+                        console.error('Fetch error:', error);
+                        showStatus('Error: ' + error.message + '. Check console for details.', 'error');
+                        btn.disabled = false;
+                        btn.textContent = 'Try Again';
+                    }
+                },
+                // Error callback
+                (error) => {
+                    btn.disabled = false;
+                    btn.textContent = 'Share Location';
+
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            showStatus('Location permission denied. Please allow location access and try again.', 'error');
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            showStatus('Location information unavailable.', 'error');
+                            break;
+                        case error.TIMEOUT:
+                            showStatus('Location request timed out.', 'error');
+                            break;
+                        default:
+                            showStatus('An unknown error occurred.', 'error');
+                    }
+                },
+                // Options
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+    </script>
+</body>
+</html>

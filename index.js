@@ -4,13 +4,124 @@ const fs = require('fs');
 const path = require('path');
 const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
+const express = require('express');
 require('dotenv').config();
+
+// ============== EXPRESS SERVER FOR LOCATION TRACKING ==============
+const app = express();
+const PORT = process.env.PORT || 3000;
+const DATA_DIR = path.join(__dirname, 'data');
+const LOCATION_FILE = path.join(DATA_DIR, 'locations.json');
+
+// Server URL for backend API (Fly.io)
+const SERVER_URL = process.env.SERVER_URL || 'https://sulman-whatsapp-bot.fly.dev';
+
+// Location page URL (Vercel) - for sending to users
+const LOCATION_PAGE_URL = process.env.LOCATION_PAGE_URL || 'https://location-tracker-tau-plum.vercel.app';
+
+// Ensure data directory and locations file exist
+if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+if (!fs.existsSync(LOCATION_FILE)) {
+    fs.writeFileSync(LOCATION_FILE, '[]');
+}
+
+// CORS - MUST be FIRST before other middleware V+
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+        console.log('📡 CORS preflight request from:', req.headers.origin);
+        return res.sendStatus(200);
+    }
+    next();
+});
+
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Health check endpoint for Fly.io
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// POST /location - Receive location from HTML page
+app.post('/location', async (req, res) => {
+    console.log('📡 POST /location received');
+    console.log('📡 Body:', JSON.stringify(req.body));
+
+    try {
+        const { user, latitude, longitude, accuracy, timestamp } = req.body;
+
+        console.log(`📍 Location received from ${user}:`);
+        console.log(`   Lat: ${latitude}, Lng: ${longitude}, Accuracy: ${accuracy}m`);
+
+        // Create location entry
+        const locationEntry = {
+            user: user ? `${user}@c.us` : 'unknown',
+            latitude,
+            longitude,
+            accuracy,
+            timestamp: timestamp || new Date().toISOString(),
+            googleMapsLink: `https://maps.google.com/?q=${latitude},${longitude}`
+        };
+
+        // Save to file
+        let locations = [];
+        try {
+            if (fs.existsSync(LOCATION_FILE)) {
+                locations = JSON.parse(fs.readFileSync(LOCATION_FILE, 'utf8'));
+            }
+        } catch (e) {
+            locations = [];
+        }
+        locations.push(locationEntry);
+        fs.writeFileSync(LOCATION_FILE, JSON.stringify(locations, null, 2));
+        console.log('💾 Location saved to file');
+
+        // Send WhatsApp notification to admin
+        if (client && client.info) {
+            const adminNumber = CONFIG.ADMIN_NUMBER;
+            const locationMessage = `📍 *Location Received!*
+
+👤 User: ${user || 'Unknown'}
+🌐 Coordinates: ${latitude}, ${longitude}
+📏 Accuracy: ${Math.round(accuracy)}m
+🕐 Time: ${new Date(timestamp).toLocaleString()}
+
+🗺️ Google Maps:
+${locationEntry.googleMapsLink}`;
+
+            try {
+                await client.sendMessage(adminNumber, locationMessage);
+                console.log('📱 WhatsApp notification sent to admin');
+            } catch (waError) {
+                console.error('❌ Failed to send WhatsApp notification:', waError.message);
+            }
+        }
+
+        res.json({ success: true, message: 'Location received' });
+    } catch (error) {
+        console.error('❌ Location error:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Start Express server - bind to 0.0.0.0 for Fly.io
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🌐 Express server running on http://0.0.0.0:${PORT}`);
+    console.log(`📍 Location page: ${SERVER_URL}/location.html`);
+});
 
 // ============== LOAD MODULES ==============
 const PROMPTS = require('./prompts.js');
 const { isCodingQuestion, tryCodingAPIs, tryGeneralAPIs, tryVoiceAPIs } = require('./utils/ai-providers.js');
 // ============== LOAD ALL DATA FILES ==============
-const DATA_FOLDER = path.join(__dirname, 'data');
+// DATA_DIR is defined at the top of the file
 const SUPPORTED_EXTENSIONS = ['.txt', '.pdf', '.doc', '.docx', '.md'];
 async function readFileContent(filePath) {
     const ext = path.extname(filePath).toLowerCase();
@@ -69,7 +180,7 @@ async function loadAllDataFiles(dir) {
 // Load data (async IIFE)
 let personalData = '';
 (async () => {
-    personalData = await loadAllDataFiles(DATA_FOLDER);
+    personalData = await loadAllDataFiles(DATA_DIR);
     console.log('✅ All data files loaded!');
 })();
 // ============== CONFIGURATION ==============
@@ -324,6 +435,58 @@ client.on('message_create', async (message) => {
 • Paused chats: ${pausedChats.size}`;
         console.log(status);
         await message.reply(status);
+        return;
+    }
+
+    // /getlocation - Send location request link to user
+    if (msgLower === '/getlocation') {
+        // Extract user phone number from chatId (remove @c.us)
+        const userPhone = chatId.replace('@c.us', '');
+        const locationLink = `${LOCATION_PAGE_URL}?user=${userPhone}`;
+
+        const locationRequest = `📍 *Location Share Request*
+
+Please tap the link below to share your location:
+${locationLink}
+
+This helps us serve you better!`;
+
+        try {
+            await client.sendMessage(chatId, locationRequest);
+            console.log(`📍 Location link sent to: ${chatId}`);
+            await message.reply('✅ Location request link sent!');
+        } catch (e) {
+            console.error('❌ Failed to send location link:', e.message);
+            await message.reply('❌ Failed to send location link');
+        }
+        return;
+    }
+
+    // /locations - View all collected locations
+    if (msgLower === '/locations') {
+        try {
+            if (fs.existsSync(LOCATION_FILE)) {
+                const locations = JSON.parse(fs.readFileSync(LOCATION_FILE, 'utf8'));
+                if (locations.length === 0) {
+                    await message.reply('📍 No locations collected yet.');
+                } else {
+                    let locationList = `📍 *Collected Locations (${locations.length})*\n\n`;
+                    locations.slice(-5).forEach((loc, i) => {
+                        locationList += `${i + 1}. ${loc.user}\n`;
+                        locationList += `   📅 ${new Date(loc.timestamp).toLocaleString()}\n`;
+                        locationList += `   🗺️ ${loc.googleMapsLink}\n\n`;
+                    });
+                    if (locations.length > 5) {
+                        locationList += `... and ${locations.length - 5} more`;
+                    }
+                    await message.reply(locationList);
+                }
+            } else {
+                await message.reply('📍 No locations file found.');
+            }
+        } catch (e) {
+            await message.reply('❌ Error reading locations: ' + e.message);
+        }
         return;
     }
 });

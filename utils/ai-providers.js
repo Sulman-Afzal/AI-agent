@@ -443,7 +443,7 @@ Respond directly and to the point.
         }
     }
 
-    // Step 2: Send transcribed text to Claude/Grok/Gemini (use General routing)
+    // Step 2: Send transcribed text to Claude/Grok/Gemini
     const voiceContext = `
 **User's voice message:** "${transcription}"
 
@@ -456,7 +456,6 @@ Respond directly and concise.
 4. Keep SHORT (2-3 sentences)
 `;
 
-    // Use the general routing (Claude → Grok → Gemini)
     console.log('📝 [VOICE] Transcription:', transcription);
 
     replyText = await tryGeneralAPIs(systemPrompt, voiceContext);
