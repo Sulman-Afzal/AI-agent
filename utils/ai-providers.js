@@ -25,6 +25,12 @@ const grok = new OpenAI({
     baseURL: "https://api.x.ai/v1"
 });
 
+// GROQ Client (uses OpenAI-compatible API)
+const groq = new OpenAI({
+    apiKey: API_KEYS.GROQ_API_KEYS[0],
+    baseURL: "https://api.groq.com/openai/v1"
+});
+
 // AWS Polly Client (for Text-to-Speech)
 let pollyClient = null;
 function getPollyClient() {
@@ -100,6 +106,19 @@ async function callOpenAI(systemPrompt, userMessage) {
 async function callGrokAPI(systemPrompt, userMessage) {
     const response = await grok.chat.completions.create({
         model: "grok-2-latest",
+        messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage }
+        ],
+        max_tokens: 1024
+    });
+    return response.choices[0].message.content.trim();
+}
+
+// GROQ API (Groq Cloud - fast inference)
+async function callGroqAPI(systemPrompt, userMessage) {
+    const response = await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
         messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userMessage }
@@ -191,38 +210,47 @@ async function textToSpeech(text) {
 
 // ============== SMART ROUTING FUNCTIONS ==============
 
-// CODING: Gemini → Claude → ChatGPT → Grok (4-tier)
+// CODING: GROQ → OpenAI → Claude → Gemini → Grok (5-tier)
 async function tryCodingAPIs(systemPrompt, userMessage) {
 
-    // 1. Try Gemini (free, fast)
+    // 1. Try GROQ (fast inference, free tier)
+    try {
+        const reply = await callGroqAPI(systemPrompt, userMessage);
+        console.log('🤖 [CODING] GROQ ✓');
+        return reply;
+    } catch (e) {
+        console.log('⚠️ [CODING] GROQ failed, trying OpenAI...');
+    }
+
+    // 2. Try OpenAI (ChatGPT)
+    try {
+        const reply = await callOpenAI(systemPrompt, userMessage);
+        console.log('🤖 [CODING] OpenAI ✓');
+        return reply;
+    } catch (e) {
+        console.log('⚠️ [CODING] OpenAI failed, trying Claude...');
+    }
+
+    // 3. Try Claude
+    try {
+        const reply = await callClaudeAPI(systemPrompt, userMessage);
+        console.log('🤖 [CODING] Claude ✓');
+        return reply;
+    } catch (e) {
+        console.log('⚠️ [CODING] Claude failed, trying Gemini...');
+    }
+
+    // 4. Try Gemini
     try {
         const prompt = `${systemPrompt}\n\nUser: ${userMessage}\n\nReply:`;
         const reply = await callGeminiAPI(prompt);
         console.log('🤖 [CODING] Gemini ✓');
         return reply;
     } catch (e) {
-        console.log('⚠️ [CODING] Gemini failed, trying Claude...');
+        console.log('⚠️ [CODING] Gemini failed, trying Grok...');
     }
 
-    // 2. Try Claude
-    try {
-        const reply = await callClaudeAPI(systemPrompt, userMessage);
-        console.log('🤖 [CODING] Claude ✓');
-        return reply;
-    } catch (e) {
-        console.log('⚠️ [CODING] Claude failed, trying ChatGPT...');
-    }
-
-    // 3. Try ChatGPT
-    try {
-        const reply = await callOpenAI(systemPrompt, userMessage);
-        console.log('🤖 [CODING] ChatGPT ✓');
-        return reply;
-    } catch (e) {
-        console.log('⚠️ [CODING] ChatGPT failed, trying Grok...');
-    }
-
-    // 4. Try Grok
+    // 5. Try Grok
     try {
         const reply = await callGrokAPI(systemPrompt, userMessage);
         console.log('🤖 [CODING] Grok ✓');
@@ -235,17 +263,16 @@ async function tryCodingAPIs(systemPrompt, userMessage) {
     return "Sab AI busy hain. Thodi der baad try karein.";
 }
 
-// GENERAL: Gemini → OpenAI → Claude → Grok (4-tier)
+// GENERAL: GROQ → OpenAI → Claude → Gemini → Grok (5-tier)
 async function tryGeneralAPIs(systemPrompt, userMessage) {
 
-    // 1. Try Gemini (free, fast)
+    // 1. Try GROQ (fast inference, free tier)
     try {
-        const prompt = `${systemPrompt}\n\nUser: ${userMessage}\n\nReply:`;
-        const reply = await callGeminiAPI(prompt);
-        console.log('🤖 [GENERAL] Gemini ✓');
+        const reply = await callGroqAPI(systemPrompt, userMessage);
+        console.log('🤖 [GENERAL] GROQ ✓');
         return reply;
     } catch (e) {
-        console.log('⚠️ [GENERAL] Gemini failed, trying OpenAI...');
+        console.log('⚠️ [GENERAL] GROQ failed, trying OpenAI...');
     }
 
     // 2. Try OpenAI (ChatGPT)
@@ -263,10 +290,20 @@ async function tryGeneralAPIs(systemPrompt, userMessage) {
         console.log('🤖 [GENERAL] Claude ✓');
         return reply;
     } catch (e) {
-        console.log('⚠️ [GENERAL] Claude failed, trying Grok...');
+        console.log('⚠️ [GENERAL] Claude failed, trying Gemini...');
     }
 
-    // 4. Try Grok
+    // 4. Try Gemini
+    try {
+        const prompt = `${systemPrompt}\n\nUser: ${userMessage}\n\nReply:`;
+        const reply = await callGeminiAPI(prompt);
+        console.log('🤖 [GENERAL] Gemini ✓');
+        return reply;
+    } catch (e) {
+        console.log('⚠️ [GENERAL] Gemini failed, trying Grok...');
+    }
+
+    // 5. Try Grok
     try {
         const reply = await callGrokAPI(systemPrompt, userMessage);
         console.log('🤖 [GENERAL] Grok ✓');
@@ -275,7 +312,7 @@ async function tryGeneralAPIs(systemPrompt, userMessage) {
         console.log('⚠️ [GENERAL] Grok failed');
     }
 
-    console.error('❌ [GENERAL] All 4 APIs failed');
+    console.error('❌ [GENERAL] All 5 APIs failed');
     return "Sab AI busy hain. Thodi der baad try karein.";
 }
 

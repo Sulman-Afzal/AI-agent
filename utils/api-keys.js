@@ -19,6 +19,9 @@ module.exports = {
     // Grok API Keys (xAI)
     GROK_API_KEYS: [process.env.GROK_API_KEY],
 
+    // GROQ API Keys (Groq Cloud - fast inference)
+    GROQ_API_KEYS: [process.env.GROQ_API_KEY],
+
     // AssemblyAI API Key (Speech-to-Text)
     ASSEMBLYAI_API_KEY: process.env.ASSEMBLYAI_API_KEY,
 
